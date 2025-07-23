@@ -26,20 +26,24 @@ const FileExplorer = () => {
       name: 'src',
       type: 'folder',
       children: [
-        { name: 'App.jsx', type: 'file' },
-        { name: 'index.css', type: 'file' },
+        { name: 'App.js', type: 'file' },
+        { name: 'index.js', type: 'file' },
+        { name: 'styles.css', type: 'file' },
         {
           name: 'components',
           type: 'folder',
           children: [
-            { name: 'Button.jsx', type: 'file' }
+            { name: 'Header.jsx', type: 'file' },
+            { name: 'Footer.jsx', type: 'file' }
           ]
         }
       ]
     },
     { name: 'package.json', type: 'file' },
-    { name: 'README.md', type: 'file' }
+    { name: 'README.md', type: 'file' },
+    { name: '.gitignore', type: 'file' }
   ])
+
   const [showCreateMenu, setShowCreateMenu] = useState(false)
   const [createMenuPosition, setCreateMenuPosition] = useState({ x: 0, y: 0 })
   const [isCreating, setIsCreating] = useState(false)
@@ -85,6 +89,53 @@ const FileExplorer = () => {
         return <File {...iconProps} className="text-gray-400" />
     }
   }
+
+  // Mock function for when electronAPI is not available
+  const mockElectronAPI = {
+    getFileStructure: async () => {
+      return [
+        {
+          name: 'src',
+          type: 'folder',
+          children: [
+            { name: 'App.js', type: 'file' },
+            { name: 'index.js', type: 'file' },
+            { name: 'styles.css', type: 'file' },
+            {
+              name: 'components',
+              type: 'folder',
+              children: [
+                { name: 'Header.jsx', type: 'file' },
+                { name: 'Footer.jsx', type: 'file' }
+              ]
+            }
+          ]
+        },
+        { name: 'package.json', type: 'file' },
+        { name: 'README.md', type: 'file' },
+        { name: '.gitignore', type: 'file' }
+      ]
+    },
+    createFilesystemItem: async ({ name, type, parentPath }) => {
+      // Mock success response
+      return { success: true }
+    }
+  }
+
+  useEffect(() => {
+    const loadFileStructure = async () => {
+      try {
+        const electronAPI = window.electronAPI || mockElectronAPI
+        const structure = await electronAPI.getFileStructure()
+        setFileStructure(structure)
+      } catch (error) {
+        console.error('Error loading file structure:', error)
+        // Fallback to default structure
+      }
+    }
+
+    loadFileStructure()
+  }, [])
 
   const toggleFolder = (folderPath) => {
     const newExpanded = new Set(expandedFolders)
@@ -149,24 +200,39 @@ const FileExplorer = () => {
     setShowCreateMenu(false)
   }
 
-  const handleCreateSubmit = () => {
+  const handleCreateSubmit = async () => {
     if (!newItemName.trim()) return
 
-    const newItem = {
-      name: newItemName.trim(),
-      type: creatingType,
-      ...(creatingType === 'folder' && { children: [] })
+    try {
+      const electronAPI = window.electronAPI || mockElectronAPI
+      const result = await electronAPI.createFilesystemItem({
+        name: newItemName.trim(),
+        type: creatingType,
+        parentPath: creatingParent || ''
+      })
+
+      if (result.success) {
+        const newItem = {
+          name: newItemName.trim(),
+          type: creatingType,
+          ...(creatingType === 'folder' && { children: [] })
+        }
+
+        setFileStructure(prev => addItemToStructure(prev, creatingParent, newItem))
+
+        if (creatingParent && creatingType === 'folder') {
+          setExpandedFolders(prev => new Set([...prev, creatingParent]))
+        }
+      } else {
+        console.error('Failed to create item:', result.error)
+      }
+    } catch (error) {
+      console.error('Error creating item:', error)
+    } finally {
+      setIsCreating(false)
+      setNewItemName('')
+      setCreatingParent(null)
     }
-
-    setFileStructure(prev => addItemToStructure(prev, creatingParent, newItem))
-
-    if (creatingParent && creatingType === 'folder') {
-      setExpandedFolders(prev => new Set([...prev, creatingParent]))
-    }
-
-    setIsCreating(false)
-    setNewItemName('')
-    setCreatingParent(null)
   }
 
   const handleCreateCancel = () => {
@@ -175,10 +241,16 @@ const FileExplorer = () => {
     setCreatingParent(null)
   }
 
-  const handleRefresh = () => {
-    // Simulate refresh - in real app, this would reload from file system
-    setSelectedItem(null)
-    setExpandedFolders(new Set(['src']))
+  const handleRefresh = async () => {
+    try {
+      const electronAPI = window.electronAPI || mockElectronAPI
+      const structure = await electronAPI.getFileStructure()
+      setFileStructure(structure)
+      setSelectedItem(null)
+      setExpandedFolders(new Set(['src']))
+    } catch (error) {
+      console.error('Error refreshing:', error)
+    }
   }
 
   const handleContextMenu = (e, itemPath = null) => {
@@ -288,7 +360,7 @@ const FileExplorer = () => {
   }
 
   return (
-    <div className="bg-gray-900 text-white border-gray-700 relative ">
+    <div className="bg-gray-900 text-white border-gray-700 relative h-96">
       {/* Header */}
       <div className="flex justify-between items-center p-3 border-b border-gray-700">
         <h1 className="text-sm font-medium text-gray-200">EXPLORER</h1>

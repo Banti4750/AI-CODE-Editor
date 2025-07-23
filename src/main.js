@@ -1,6 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron'; // Add ipcMain to the imports
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import fs from 'fs'; // Add fs import
+import os from 'os'; // Add os import
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -30,12 +32,34 @@ const createWindow = () => {
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Add the IPC handlers here, after app is ready
+  ipcMain.handle('create-filesystem-item', async (event, { name, type, parentPath }) => {
+    try {
+      const basePath = path.join(os.homedir(), 'my-project');
+      const fullPath = parentPath ? path.join(basePath, parentPath, name) : path.join(basePath, name);
+
+      if (type === 'folder') {
+        fs.mkdirSync(fullPath, { recursive: true });
+      } else {
+        fs.writeFileSync(fullPath, '');
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('get-file-structure', async () => {
+    const basePath = path.join(os.homedir(), 'my-project');
+    return readDirectoryRecursive(basePath);
+  });
+
+
+
   createWindow();
 
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -43,14 +67,36 @@ app.whenReady().then(() => {
   });
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed, except on macOS.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+// Helper function to read directory structure
+function readDirectoryRecursive(dirPath, relativePath = '') {
+  const items = fs.readdirSync(dirPath);
+  const structure = [];
+
+  for (const item of items) {
+    const fullPath = path.join(dirPath, item);
+    const stats = fs.statSync(fullPath);
+    const itemRelativePath = relativePath ? `${relativePath}/${item}` : item;
+
+    if (stats.isDirectory()) {
+      structure.push({
+        name: item,
+        type: 'folder',
+        children: readDirectoryRecursive(fullPath, itemRelativePath)
+      });
+    } else {
+      structure.push({
+        name: item,
+        type: 'file'
+      });
+    }
+  }
+
+  return structure;
+}
