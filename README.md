@@ -1,54 +1,57 @@
 # My New App
 
-This is an Electron application built with React and Vite.
-
-## Setup
-
-To set up the project, navigate to the `my-new-app` directory and install the dependencies:
-
-```bash
-npm install
-```
-
-## Running the Application
-
-To run the application in development mode:
-
-```bash
-npm start
-```
+This is a new application created with Vite and React.
 
 ## Project Structure
 
-```
-my-new-app/
-├── .gitignore
-├── forge.config.js
-├── index.html
-├── package.json
-├── src/
-│   ├── App.jsx
-│   ├── SideContent/
-│   ├── components/
-│   ├── index.css
-│   ├── main.js
-│   ├── preload.js
-│   └── renderer.jsx
-├── vite.main.config.mjs
-├── vite.preload.config.mjs
-└── vite.renderer.config.mjs
-```
+- `src/`: Contains the source code for the application.
+  - `App.jsx`: Main application component.
+  - `main.js`: Entry point for the main process (Electron).
+  - `preload.js`: Preload script for Electron.
+  - `renderer.jsx`: Entry point for the renderer process (React).
+  - `SideContent/`: Components related to side content, e.g., `FileExplorer.jsx`.
+  - `components/`: Reusable UI components.
+  - `index.css`: Global styles.
+- `public/`: Static assets.
+- `forge.config.js`: Electron Forge configuration.
+- `vite.main.config.mjs`, `vite.preload.config.mjs`, `vite.renderer.config.mjs`: Vite configurations for different Electron processes.
 
-## Running the Application
+## Getting Started
 
-To package the application for distribution:
+To run this project locally, follow these steps:
 
-```bash
-npm run package
-```
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-To make a distributable application:
+2. **Start the development server:**
+   ```bash
+   npm start
+   ```
 
-```bash
-npm run make
-```
+3. **Build the application:**
+   ```bash
+   npm run make
+   ```
+
+## Features
+
+- **File Explorer:** Browse and manage files within the application.
+- **Code Editor:** (If applicable) Edit code directly within the application.
+- **Live Reload:** Development server with hot module replacement.
+
+## Technologies Used
+
+- React
+- Vite
+- Electron
+- Electron Forge
+
+## Contributing
+
+Feel free to contribute to this project by submitting issues or pull requests.
+
+## License
+
+This project is licensed under the MIT License.
