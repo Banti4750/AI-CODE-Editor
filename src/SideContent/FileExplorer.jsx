@@ -14,7 +14,8 @@ import {
   Plus,
   RefreshCw,
   FolderPlus,
-  FilePlus
+  FilePlus,
+  Delete
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
@@ -436,6 +437,13 @@ const FileExplorer = () => {
             >
               <FolderPlus size={16} className="mr-2 text-gray-400" />
               New Folder
+            </button>
+             <button
+              className="w-full text-left px-3 py-1 hover:bg-gray-700 text-sm flex items-center"
+              onClick={() => handleCreateNew('folder', creatingParent)}
+            >
+              <Delete size={16} className="mr-2 text-gray-400" />
+              Delete
             </button>
             <div className="border-t border-gray-600 my-1"></div>
             <button
